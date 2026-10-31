@@ -1,25 +1,51 @@
 # CareerMatch AI
 
-**A local-first resume and job matching workspace with explainable skill evidence.** Save a resume, compare it with a job description, and review the matching phrases and suggested next steps—all without creating an account.
+![CareerMatch AI banner](docs/assets/careermatch-banner.svg)
 
-> **Current implementation:** the matcher is a deterministic phrase-matching baseline, not a generative AI model, semantic similarity system, or hiring decision tool. The optional Supabase foundation in this repository is not required by the current browser workflow.
+[![React](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+![Local-first](https://img.shields.io/badge/Mode-Local--first-3978a8)
 
-## What it does
+**CareerMatch AI helps job seekers compare a resume with a job description and see which skill phrases match.** It runs locally, requires no account, and provides evidence to help users review the result.
 
-- Saves PDF and DOCX resume files in the current browser (maximum 10 MB).
-- Saves job descriptions, analysis history, and profile preferences in browser storage.
-- Extracts text through a local FastAPI service and compares supported skill phrases.
-- Returns an overall coverage percentage plus matched/missing skills and evidence snippets.
-- Shows history, curated learning links, starter projects, and interview practice prompts.
-- Requires no account, hosted database, API key, or cloud service for the local workflow.
+> **How matching works:** The current analyzer uses deterministic phrase matching and a curated skill vocabulary. It is not a generative AI or semantic matching system, and its results are not a hiring decision.
+
+## Features
+
+- Add and manage PDF or DOCX resumes in the browser.
+- Compare a resume with a job description.
+- Review matched and missing skill phrases with text evidence.
+- See a coverage score based on detected job skill phrases.
+- Keep resumes in browser IndexedDB and jobs, results, and preferences in localStorage.
+- Explore analysis history, learning resources, project ideas, and interview prompts.
+- Use the local workflow without an account, API key, or hosted database.
+
+## Technology
+
+| Area | Technologies |
+| --- | --- |
+| Frontend | React 19, Vite 8, React Router, Tailwind CSS, Lucide React |
+| Backend | Python 3.11+, FastAPI, Uvicorn |
+| Resume extraction | pypdf for PDF; Python ZIP/XML processing for DOCX |
+| Browser storage | IndexedDB for resume files; localStorage for jobs, results, and preferences |
+| Optional cloud foundation | Supabase Auth, SQL schema, and row-level security |
+
+The current browser workflow uses the local API. Supabase components are included as optional groundwork and are not required to run the app.
 
 ## Run locally
 
-Requirements: Node.js 20.19+ or 22.12+, npm, and Python 3.11+.
+### Requirements
 
-Open the project in VS Code and start two integrated terminals.
+- Node.js 20.19+ or 22.12+
+- npm
+- Python 3.11+
+- VS Code (recommended) or another editor
 
-**Terminal 1 — API**
+### 1. Start the backend
+
+Open a terminal in the project folder:
 
 ```powershell
 cd backend
@@ -28,7 +54,9 @@ py -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 ```
 
-**Terminal 2 — web app**
+### 2. Start the frontend
+
+Open a second terminal in the project folder:
 
 ```powershell
 cd frontend
@@ -36,32 +64,45 @@ npm ci
 npm run dev
 ```
 
-Open the Vite URL printed in the terminal, normally [http://localhost:5173](http://localhost:5173). Keep both processes running while using the app. The API health check is [http://localhost:8001/health](http://localhost:8001/health), and its interactive API docs are at [http://localhost:8001/docs](http://localhost:8001/docs).
+Open the URL printed by Vite, usually [http://localhost:5173](http://localhost:5173). Keep both terminals running while using the app.
 
-## How analysis works
+- API health check: [http://localhost:8001/health](http://localhost:8001/health)
+- Interactive API documentation: [http://localhost:8001/docs](http://localhost:8001/docs)
 
-1. Choose a saved resume and add a job title and job description (40–30,000 characters).
-2. The browser sends the selected resume to the local API when analysis is requested.
-3. The API extracts PDF text with `pypdf` or DOCX text from its XML document body.
-4. A curated skill vocabulary detects phrases in the job description and checks for those phrases in the resume.
-5. The API returns a score and evidence; the browser saves the result locally.
+## How the match score works
 
-The score is `matched detected skills / total detected job skills × 100`, with equal weight for each detected skill. The analyzer can miss synonyms and context. Scanned image PDFs are not supported because OCR is not implemented. See [Architecture](docs/ARCHITECTURE.md) for the data flow and [API reference](docs/API.md) for endpoint details.
+1. The user selects a resume and enters a job title and description.
+2. The browser sends the resume and job details to the local FastAPI service.
+3. The API extracts text from the PDF or DOCX file.
+4. The analyzer detects supported skill phrases in the job description and looks for those phrases in the resume.
+5. It returns matched and missing phrases, evidence, and a coverage score.
+
+The score is calculated as:
+
+```text
+matched detected job skills / total detected job skills × 100
+```
+
+Each detected skill phrase has equal weight. The analyzer may miss synonyms, equivalent skills, or context. Scanned image PDFs are not supported because OCR is not implemented.
 
 ## Data and privacy
 
-Resume files are stored in IndexedDB. Jobs, results, and profile preferences are stored in localStorage. Data stays with the current browser profile and device; it is not backed up or synchronized. Clearing the browser’s site data removes the local workspace. During analysis, the resume is sent to the API running on the same device; the guest endpoint does not persist it on the server.
+Resume files are stored in IndexedDB in the current browser profile. Jobs, analysis results, and profile preferences are stored in localStorage. Data is not synchronized or backed up. Clearing the browser’s site data removes the local workspace.
+
+When analysis runs, the resume is sent to the API on the same device. The guest analysis endpoint does not persist the resume on the server.
 
 ## Project structure
 
 ```text
-backend/       FastAPI app, document extraction, matcher, and tests
-frontend/      React + Vite browser application
-supabase/      Optional SQL schema, policies, and curated seed data
-docs/          Architecture, API, and development documentation
+backend/       FastAPI application, document extraction, matching logic, and tests
+frontend/      React and Vite web application
+supabase/      Optional SQL schema, policies, and seed data
+docs/          Architecture, API, and development guides
 ```
 
-## Validate changes
+## Validation
+
+From the project root, run:
 
 ```powershell
 cd frontend
@@ -71,21 +112,15 @@ cd ..\backend
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-The backend tests cover the health/status routes, protected profile boundary, guest DOCX analysis, and unsupported file rejection. There is no separate frontend test script configured.
+## Current limitations
 
-## Optional Supabase foundation
-
-The repository retains Supabase Auth verification, protected profile/analysis endpoints, SQL migrations, row-level security policies, a private resume bucket, and seed data for possible future cloud sync. These are not required for the current no-login local app. Details and feature status are documented in [Architecture](docs/ARCHITECTURE.md).
-
-## Current boundaries
-
-- Phrase matching is transparent but less capable than semantic or model-based matching.
-- The skill vocabulary and curated resource/project catalogs are intentionally small.
-- No OCR, cloud sync, remote backup, or cross-device history is implemented in the local flow.
-- Results are informational and should be checked against the original resume and job description.
+- Phrase matching is transparent, but does not understand meaning like a semantic model.
+- The skill vocabulary and curated resources are limited.
+- OCR, cloud sync, remote backup, and cross-device history are not part of the local workflow.
+- The score is informational. Review the resume and job description yourself.
 
 ## Documentation
 
-- [Project architecture and feature status](docs/ARCHITECTURE.md)
+- [Architecture and feature status](docs/ARCHITECTURE.md)
 - [API reference](docs/API.md)
-- [Development and validation guide](docs/DEVELOPMENT.md)
+- [Development guide](docs/DEVELOPMENT.md)
